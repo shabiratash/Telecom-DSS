@@ -1,0 +1,66 @@
+{% extends "customer_workspace/base.html" %}
+{% block title %}View Customer #{{ customer.customer_id }} · {{ app_name }}{% endblock %}
+{% block page_title %}Customer Details #{{ customer.customer_id }}{% endblock %}
+
+{% block content %}
+<div class="d-flex gap-2 mb-3">
+    <a href="{{ url_for('customer.profile_full', customer_id=customer.customer_id) }}" class="btn btn-sm btn-gradient"><i class="bi bi-person-vcard"></i> Full Profile</a>
+    <a href="{{ url_for('customer.edit_customer', customer_id=customer.customer_id) }}" class="btn btn-sm btn-outline-light"><i class="bi bi-pencil"></i> Edit</a>
+    <a href="{{ url_for('customer.list_customers') }}" class="btn btn-sm btn-outline-light">Back to List</a>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-6">
+        <div class="panel glass">
+            <h3 class="panel-title"><i class="bi bi-person"></i> Personal Information</h3>
+            <div class="detail-grid">
+                <div><span>Customer ID</span><b>#{{ customer.customer_id }}</b></div>
+                <div><span>Age</span><b>{{ customer.age }}</b></div>
+                <div><span>Gender</span><b>{{ customer.gender }}</b></div>
+                <div><span>Province</span><b>{{ customer.province.province_name }}</b></div>
+                <div><span>Area Type</span><b>{{ customer.area_type }}</b></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="panel glass">
+            <h3 class="panel-title"><i class="bi bi-reception-4"></i> Network Information</h3>
+            <div class="detail-grid">
+                <div><span>Network Quality</span><b>{{ customer.network_quality }}</b></div>
+                <div><span>Internet Type</span><b>{{ customer.internet_type }}</b></div>
+                <div><span>Call Drop Rate</span><b>{{ customer.call_drop_rate }}%</b></div>
+                <div><span>Tower Availability</span><b>{{ customer.tower_availability }}</b></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="panel glass">
+            <h3 class="panel-title"><i class="bi bi-bar-chart"></i> Usage Information</h3>
+            <div class="detail-grid">
+                <div><span>Recharge Amount</span><b>{{ customer.recharge_amount }} AFN</b></div>
+                <div><span>Recharge Frequency</span><b>{{ customer.recharge_frequency }}/mo</b></div>
+                <div><span>Payment Method</span><b>{{ customer.payment_method }}</b></div>
+                <div><span>Tenure</span><b>{{ customer.tenure_months }} months</b></div>
+                <div><span>Inactive Days</span><b>{{ customer.inactive_days }}</b></div>
+                <div><span>Complaints</span><b>{{ customer.complaint_count }}</b></div>
+                <div><span>Competitor Exposure</span><b>{{ customer.competitor_offer_exposure }}</b></div>
+                <div><span>Discount Usage</span><b>{{ customer.discount_usage }}</b></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="panel glass">
+            <h3 class="panel-title"><i class="bi bi-heart-pulse"></i> Health &amp; Status</h3>
+            <div class="text-center py-2">
+                <span class="health-badge health-{{ customer.health_status()|lower }}" style="font-size:1.1rem">
+                    Health Score: {{ customer.health_score() }} ({{ customer.health_status() }})
+                </span>
+                <div class="mt-3">
+                    {% if customer.churn==1 %}<span class="badge badge-churn">Churned</span>
+                    {% else %}<span class="badge badge-active">Active</span>{% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

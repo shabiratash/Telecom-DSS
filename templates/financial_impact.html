@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Financial Impact · {{ app_name }}{% endblock %}
+{% block page_title %}Afghanistan Telecom Churn Prediction and Retention System{% endblock %}
+
+{% block content %}
+<div class="kpi-grid kpi-grid-4">
+    <div class="kpi-card glass animate-up" style="--d:0">
+        <div class="kpi-icon bg-red"><i class="bi bi-exclamation-triangle-fill"></i></div>
+        <div><div class="kpi-value" id="highRiskCustomers">0</div><div class="kpi-label">High Risk Customers</div></div>
+    </div>
+    <div class="kpi-card glass animate-up" style="--d:1">
+        <div class="kpi-icon bg-purple"><i class="bi bi-wallet2"></i></div>
+        <div><div class="kpi-value" id="avgRecharge">0 AFN</div><div class="kpi-label">Avg Revenue/Customer</div></div>
+    </div>
+    <div class="kpi-card glass animate-up" style="--d:2">
+        <div class="kpi-icon bg-orange"><i class="bi bi-graph-down-arrow"></i></div>
+        <div><div class="kpi-value" id="monthlyLoss">0 AFN</div><div class="kpi-label">Monthly Revenue Risk</div></div>
+    </div>
+    <div class="kpi-card glass animate-up" style="--d:3">
+        <div class="kpi-icon bg-red"><i class="bi bi-currency-dollar"></i></div>
+        <div><div class="kpi-value" id="yearlyLoss">0 AFN</div><div class="kpi-label">Yearly Revenue Risk</div></div>
+    </div>
+</div>
+
+<div class="row g-3 mt-1">
+    <div class="col-lg-8">
+        <div class="panel glass animate-up" style="--d:4">
+            <h3 class="panel-title"><i class="bi bi-geo-alt"></i> Province Revenue Risk Analysis</h3>
+            <div class="table-scroll" style="max-height:400px">
+                <table class="table table-dark-glass mb-0">
+                    <thead><tr><th>Province</th><th>Total</th><th>Active</th><th>Churned</th><th>Churn Rate</th><th>Avg Revenue</th><th>Yearly Risk</th></tr></thead>
+                    <tbody id="provinceBody">
+                        <tr><td colspan="7" class="text-center muted py-4">Loading province data...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="panel glass animate-up" style="--d:5">
+            <h3 class="panel-title"><i class="bi bi-pie-chart"></i> Revenue Risk Distribution</h3>
+            <div style="height: 300px; position: relative;">
+                <canvas id="riskChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/financial_impact.js') }}"></script>
+{% endblock %}

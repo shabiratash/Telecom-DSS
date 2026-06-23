@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Model Diagnostics · {{ app_name }}{% endblock %}
+{% block page_title %}Model Diagnostics{% endblock %}
+
+{% block content %}
+{% if not model_ready %}
+<div class="panel glass">
+    <div class="alert alert-warning glass mb-0"><i class="bi bi-exclamation-triangle"></i>
+        Model not trained yet. Train it from the ML Center before viewing diagnostics.</div>
+</div>
+{% else %}
+<div id="diagAlert"></div>
+
+<!-- Overfitting Detector -->
+<div class="panel glass">
+    <h3 class="panel-title"><i class="bi bi-clipboard2-pulse"></i> Overfitting Detector
+        <span class="muted small">· Model: <b id="diagModel">-</b></span></h3>
+    <div class="kpi-grid kpi-grid-4">
+        <div class="kpi-card"><div class="kpi-label">Training Accuracy</div><div class="kpi-value" id="trainAcc">-</div></div>
+        <div class="kpi-card"><div class="kpi-label">Validation Accuracy</div><div class="kpi-value" id="valAcc">-</div></div>
+        <div class="kpi-card"><div class="kpi-label">Test Accuracy</div><div class="kpi-value" id="testAcc">-</div></div>
+        <div class="kpi-card" id="gapCard"><div class="kpi-label">Train − Test Gap</div><div class="kpi-value" id="gapVal">-</div>
+            <div class="kpi-sub"><span class="status-pill" id="statusPill">-</span></div></div>
+    </div>
+    <p class="muted small mt-2" id="diagNote"></p>
+</div>
+
+<!-- Performance -->
+<div class="panel glass mt-3">
+    <h3 class="panel-title"><i class="bi bi-speedometer2"></i> Model Performance (Test Holdout)</h3>
+    <div class="kpi-grid kpi-grid-5">
+        <div class="kpi-card"><div class="kpi-label">Accuracy</div><div class="kpi-value" id="mAcc">-</div></div>
+        <div class="kpi-card"><div class="kpi-label">Precision</div><div class="kpi-value" id="mPrec">-</div></div>
+        <div class="kpi-card"><div class="kpi-label">Recall</div><div class="kpi-value" id="mRec">-</div></div>
+        <div class="kpi-card"><div class="kpi-label">F1 Score</div><div class="kpi-value" id="mF1">-</div></div>
+        <div class="kpi-card"><div class="kpi-label">ROC AUC</div><div class="kpi-value" id="mAuc">-</div></div>
+    </div>
+</div>
+
+<div class="row g-3 mt-0">
+    <div class="col-lg-6">
+        <div class="panel glass h-100">
+            <h3 class="panel-title"><i class="bi bi-grid-3x3"></i> Confusion Matrix</h3>
+            <div style="position:relative;height:300px"><canvas id="confusionChart"></canvas></div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="panel glass h-100">
+            <h3 class="panel-title"><i class="bi bi-graph-up"></i> ROC Curve</h3>
+            <div style="position:relative;height:300px"><canvas id="rocChart"></canvas></div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/model_diagnostics.js') }}"></script>
+{% endblock %}

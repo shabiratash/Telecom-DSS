@@ -1,0 +1,194 @@
+{% extends "customer_portal/base.html" %}
+
+{% block title %}Profile{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2 class="mb-4"><i class="bi bi-person-gear"></i> My Profile</h2>
+        
+        {% if customer %}
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Personal Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <table class="table table-borderless">
+                            <tr>
+                                <td width="40%"><strong>Customer ID:</strong></td>
+                                <td>{{ customer.customer_id }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Age:</strong></td>
+                                <td>{{ customer.age }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Gender:</strong></td>
+                                <td>{{ customer.gender }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Province:</strong></td>
+                                <td>{{ customer.province.province_name if customer.province else 'N/A' }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Area Type:</strong></td>
+                                <td>{{ customer.area_type }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <table class="table table-borderless">
+                            <tr>
+                                <td width="40%"><strong>Network Quality:</strong></td>
+                                <td>
+                                    <span class="badge bg-{{ 'success' if customer.network_quality == 'Excellent' or customer.network_quality == 'Good' else 'warning' if customer.network_quality == 'Average' else 'danger' }}">
+                                        {{ customer.network_quality }}
+                                    </span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>Internet Type:</strong></td>
+                                <td>{{ customer.internet_type }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Tower Availability:</strong></td>
+                                <td>{{ customer.tower_availability }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Payment Method:</strong></td>
+                                <td>{{ customer.payment_method }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Discount Usage:</strong></td>
+                                <td>{{ customer.discount_usage }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row g-4">
+            <!-- Usage Information -->
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0">Usage Information</h5>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-borderless">
+                            <tr>
+                                <td width="50%"><strong>Recharge Amount:</strong></td>
+                                <td>${{ "%.2f"|format(customer.recharge_amount) }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Recharge Frequency:</strong></td>
+                                <td>{{ customer.recharge_frequency }} times/month</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Tenure:</strong></td>
+                                <td>{{ customer.tenure_months }} months</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Inactive Days:</strong></td>
+                                <td>{{ customer.inactive_days }} days</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Call Drop Rate:</strong></td>
+                                <td>{{ "%.2f"|format(customer.call_drop_rate) }}%</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Account Status -->
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-header bg-secondary text-white">
+                        <h5 class="mb-0">Account Status</h5>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-borderless">
+                            <tr>
+                                <td width="50%"><strong>Complaint Count:</strong></td>
+                                <td>
+                                    <span class="badge bg-{{ 'danger' if customer.complaint_count > 3 else 'warning' if customer.complaint_count > 0 else 'success' }}">
+                                        {{ customer.complaint_count }}
+                                    </span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>Competitor Exposure:</strong></td>
+                                <td>{{ customer.competitor_offer_exposure }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Health Score:</strong></td>
+                                <td>
+                                    <span class="badge bg-{{ 'success' if customer.health_score() > 80 else 'warning' if customer.health_score() > 60 else 'danger' }}">
+                                        {{ customer.health_score() }}/100
+                                    </span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>Health Status:</strong></td>
+                                <td>
+                                    <span class="badge bg-{{ 'success' if customer.health_status() == 'Excellent' or customer.health_status() == 'Good' else 'warning' if customer.health_status() == 'Warning' else 'danger' }}">
+                                        {{ customer.health_status() }}
+                                    </span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>Churn Status:</strong></td>
+                                <td>
+                                    <span class="badge bg-{{ 'danger' if customer.churn == 1 else 'success' }}">
+                                        {{ 'Churned' if customer.churn == 1 else 'Active' }}
+                                    </span>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mt-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">Quick Links</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <a href="{{ url_for('customer_portal.prediction') }}" class="btn btn-outline-primary w-100">
+                            <i class="bi bi-graph-up"></i> Get Prediction
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="{{ url_for('customer_portal.risk_status') }}" class="btn btn-outline-info w-100">
+                            <i class="bi bi-shield-exclamation"></i> Risk Status
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="{{ url_for('customer_portal.recommendations') }}" class="btn btn-outline-success w-100">
+                            <i class="bi bi-lightbulb"></i> Recommendations
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="{{ url_for('customer_portal.home') }}" class="btn btn-outline-secondary w-100">
+                            <i class="bi bi-house"></i> Back to Home
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle"></i>
+            No customer data available.
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

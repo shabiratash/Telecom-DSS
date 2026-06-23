@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+{% block title %}What-If Simulator · {{ app_name }}{% endblock %}
+{% block page_title %}Afghanistan Telecom Churn Prediction and Retention System{% endblock %}
+
+{% block content %}
+<!-- Customer Selection -->
+<div class="panel glass animate-up" style="--d:0">
+    <h3 class="panel-title"><i class="bi bi-person-lines-fill"></i> Select Customer</h3>
+    <div class="row g-3 align-items-end">
+        <div class="col-md-6">
+            <label class="form-label">Choose Customer</label>
+            <select id="customerSelect" class="form-select">
+                <option value="">-- Select a customer --</option>
+                {% for customer in customers %}
+                <option value="{{ customer.customer_id }}">Customer #{{ customer.customer_id }} - {{ customer.province.province_name if customer.province else 'Unknown' }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-6">
+            <button id="loadCustomerBtn" class="btn btn-gradient" onclick="loadCustomer()">
+                <i class="bi bi-arrow-down-circle"></i> Load Customer Data
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Customer Data & Simulation -->
+<div class="row g-3 mt-1" id="simulationArea" style="display:none;">
+    <!-- Current State -->
+    <div class="col-lg-4">
+        <div class="panel glass animate-up" style="--d:1">
+            <h3 class="panel-title"><i class="bi bi-info-circle"></i> Current State</h3>
+            <div id="currentCustomerInfo"></div>
+            <div class="mt-3">
+                <h4 class="text-muted small">Current Churn Probability</h4>
+                <div class="gauge" style="--p:0" id="currentGauge">
+                    <div class="gauge-value" id="currentProb">0%</div>
+                </div>
+                <div class="text-center mt-2">
+                    <span class="risk-pill" id="currentRisk">-</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- What-If Controls -->
+    <div class="col-lg-4">
+        <div class="panel glass animate-up" style="--d:2">
+            <h3 class="panel-title"><i class="bi bi-sliders"></i> What-If Changes</h3>
+            <div class="mb-3">
+                <label class="form-label">Recharge Frequency</label>
+                <input type="range" id="rechargeFrequency" min="0" max="20" class="form-range" oninput="updateSimulation()">
+                <div class="d-flex justify-content-between small muted">
+                    <span>0</span><span id="rechargeFreqValue">-</span><span>20</span>
+                </div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Complaint Count</label>
+                <input type="range" id="complaintCount" min="0" max="20" class="form-range" oninput="updateSimulation()">
+                <div class="d-flex justify-content-between small muted">
+                    <span>0</span><span id="complaintCountValue">-</span><span>20</span>
+                </div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Network Quality</label>
+                <select id="networkQuality" class="form-select" onchange="updateSimulation()">
+                    <option value="Poor">Poor</option>
+                    <option value="Average">Average</option>
+                    <option value="Good">Good</option>
+                    <option value="Excellent">Excellent</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Inactive Days</label>
+                <input type="range" id="inactiveDays" min="0" max="90" class="form-range" oninput="updateSimulation()">
+                <div class="d-flex justify-content-between small muted">
+                    <span>0</span><span id="inactiveDaysValue">-</span><span>90</span>
+                </div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Call Drop Rate (%)</label>
+                <input type="range" id="callDropRate" min="0" max="25" step="0.5" class="form-range" oninput="updateSimulation()">
+                <div class="d-flex justify-content-between small muted">
+                    <span>0%</span><span id="callDropRateValue">-</span><span>25%</span>
+                </div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Discount Usage</label>
+                <select id="discountUsage" class="form-select" onchange="updateSimulation()">
+                    <option value="No">No</option>
+                    <option value="Yes">Yes</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Competitor Offer Exposure</label>
+                <select id="competitorOffer" class="form-select" onchange="updateSimulation()">
+                    <option value="No">No</option>
+                    <option value="Yes">Yes</option>
+                </select>
+            </div>
+            <button class="btn btn-gradient w-100" onclick="resetSimulation()">
+                <i class="bi bi-arrow-counterclockwise"></i> Reset to Original
+            </button>
+        </div>
+    </div>
+
+    <!-- Results -->
+    <div class="col-lg-4">
+        <div class="panel glass animate-up" style="--d:3">
+            <h3 class="panel-title"><i class="bi bi-graph-up-arrow"></i> Simulation Results</h3>
+            <div class="mb-3">
+                <h4 class="text-muted small">New Churn Probability</h4>
+                <div class="gauge" style="--p:0" id="newGauge">
+                    <div class="gauge-value" id="newProb">0%</div>
+                </div>
+                <div class="text-center mt-2">
+                    <span class="risk-pill" id="newRisk">-</span>
+                </div>
+            </div>
+            <div class="panel glass" id="improvementPanel">
+                <h4 class="text-muted small mb-2">Risk Improvement</h4>
+                <div class="text-center">
+                    <div class="display-4 fw-bold" id="improvementValue">0%</div>
+                    <div class="muted" id="improvementLabel">No change</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Impact Breakdown -->
+<div class="panel glass animate-up mt-3" id="impactPanel" style="--d:4; display:none;">
+    <h3 class="panel-title"><i class="bi bi-lightning-charge"></i> Impact Breakdown</h3>
+    <div class="row g-3" id="impactCards"></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/whatif_simulator.js') }}"></script>
+{% endblock %}

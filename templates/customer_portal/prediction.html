@@ -1,0 +1,195 @@
+{% extends "customer_portal/base.html" %}
+
+{% block title %}Churn Prediction{% endblock %}
+
+{% block extra_css %}
+<style>
+.prediction-form .form-label { font-weight: 500; }
+.prediction-result { transition: all 0.3s ease; }
+.loading-spinner { display: none; }
+.loading-spinner.active { display: inline-block; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2 class="mb-4"><i class="bi bi-graph-up"></i> Live Churn Prediction</h2>
+        
+        {% if not model_available %}
+        <div class="alert alert-warning">
+            <i class="bi bi-exclamation-triangle"></i>
+            <strong>ML Model Not Available:</strong> The prediction model is not loaded. Please contact support.
+        </div>
+        {% endif %}
+        
+        <div class="row">
+            <!-- Editable Form -->
+            <div class="col-lg-6 mb-4">
+                <div class="card">
+                    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Edit Your Data</h5>
+                        <button id="resetBtn" class="btn btn-sm btn-light">
+                            <i class="bi bi-arrow-counterclockwise"></i> Reset
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <form id="predictionForm" class="prediction-form">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Age</label>
+                                    <input type="number" class="form-control" name="age" id="age" value="{{ customer.age if customer else 30 }}" min="18" max="100">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Gender</label>
+                                    <select class="form-select" name="gender" id="gender">
+                                        <option value="Male" {{ 'selected' if customer and customer.gender == 'Male' else '' }}>Male</option>
+                                        <option value="Female" {{ 'selected' if customer and customer.gender == 'Female' else '' }}>Female</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Province</label>
+                                    <select class="form-select" name="province_name" id="province_name">
+                                        {% for province in ['Kabul', 'Herat', 'Kandahar', 'Balkh', 'Nangarhar', 'Kunduz', 'Helmand', 'Ghazni', 'Baghlan', 'Badakhshan', 'Takhar', 'Faryab', 'Jowzjan', 'Samangan', 'Sar-e Pol', 'Bamyan', 'Parwan', 'Kapisa', 'Panjshir', 'Logar', 'Wardak', 'Paktia', 'Paktika', 'Khost', 'Ghor', 'Daikundi', 'Uruzgan', 'Zabul', 'Farah', 'Nimroz', 'Badghis', 'Laghman', 'Kunar', 'Nuristan'] %}
+                                        <option value="{{ province }}" {{ 'selected' if customer and customer.province and customer.province.province_name == province else '' }}>{{ province }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Area Type</label>
+                                    <select class="form-select" name="area_type" id="area_type">
+                                        <option value="Urban" {{ 'selected' if customer and customer.area_type == 'Urban' else '' }}>Urban</option>
+                                        <option value="Rural" {{ 'selected' if customer and customer.area_type == 'Rural' else '' }}>Rural</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Network Quality</label>
+                                    <select class="form-select" name="network_quality" id="network_quality">
+                                        <option value="Poor" {{ 'selected' if customer and customer.network_quality == 'Poor' else '' }}>Poor</option>
+                                        <option value="Average" {{ 'selected' if customer and customer.network_quality == 'Average' else '' }}>Average</option>
+                                        <option value="Good" {{ 'selected' if customer and customer.network_quality == 'Good' else '' }}>Good</option>
+                                        <option value="Excellent" {{ 'selected' if customer and customer.network_quality == 'Excellent' else '' }}>Excellent</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Internet Type</label>
+                                    <select class="form-select" name="internet_type" id="internet_type">
+                                        <option value="2G" {{ 'selected' if customer and customer.internet_type == '2G' else '' }}>2G</option>
+                                        <option value="3G" {{ 'selected' if customer and customer.internet_type == '3G' else '' }}>3G</option>
+                                        <option value="4G" {{ 'selected' if customer and customer.internet_type == '4G' else '' }}>4G</option>
+                                        <option value="5G" {{ 'selected' if customer and customer.internet_type == '5G' else '' }}>5G</option>
+                                        <option value="Fiber" {{ 'selected' if customer and customer.internet_type == 'Fiber' else '' }}>Fiber</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Call Drop Rate (%)</label>
+                                    <input type="number" class="form-control" name="call_drop_rate" id="call_drop_rate" value="{{ customer.call_drop_rate if customer else 0 }}" min="0" max="50" step="0.1">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Recharge Amount</label>
+                                    <input type="number" class="form-control" name="recharge_amount" id="recharge_amount" value="{{ customer.recharge_amount if customer else 100 }}" min="0" step="1">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Recharge Frequency (per month)</label>
+                                    <input type="number" class="form-control" name="recharge_frequency" id="recharge_frequency" value="{{ customer.recharge_frequency if customer else 4 }}" min="0" max="30">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Payment Method</label>
+                                    <select class="form-select" name="payment_method" id="payment_method">
+                                        <option value="Cash" {{ 'selected' if customer and customer.payment_method == 'Cash' else '' }}>Cash</option>
+                                        <option value="Mobile Money" {{ 'selected' if customer and customer.payment_method == 'Mobile Money' else '' }}>Mobile Money</option>
+                                        <option value="Bank Transfer" {{ 'selected' if customer and customer.payment_method == 'Bank Transfer' else '' }}>Bank Transfer</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Tenure (months)</label>
+                                    <input type="number" class="form-control" name="tenure_months" id="tenure_months" value="{{ customer.tenure_months if customer else 12 }}" min="0" max="120">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Inactive Days</label>
+                                    <input type="number" class="form-control" name="inactive_days" id="inactive_days" value="{{ customer.inactive_days if customer else 0 }}" min="0" max="365">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Complaint Count</label>
+                                    <input type="number" class="form-control" name="complaint_count" id="complaint_count" value="{{ customer.complaint_count if customer else 0 }}" min="0" max="50">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Tower Availability</label>
+                                    <select class="form-select" name="tower_availability" id="tower_availability">
+                                        <option value="Low" {{ 'selected' if customer and customer.tower_availability == 'Low' else '' }}>Low</option>
+                                        <option value="Medium" {{ 'selected' if customer and customer.tower_availability == 'Medium' else '' }}>Medium</option>
+                                        <option value="High" {{ 'selected' if customer and customer.tower_availability == 'High' else '' }}>High</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Competitor Offer Exposure</label>
+                                    <select class="form-select" name="competitor_offer_exposure" id="competitor_offer_exposure">
+                                        <option value="No" {{ 'selected' if customer and customer.competitor_offer_exposure == 'No' else '' }}>No</option>
+                                        <option value="Yes" {{ 'selected' if customer and customer.competitor_offer_exposure == 'Yes' else '' }}>Yes</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Discount Usage</label>
+                                    <select class="form-select" name="discount_usage" id="discount_usage">
+                                        <option value="No" {{ 'selected' if customer and customer.discount_usage == 'No' else '' }}>No</option>
+                                        <option value="Yes" {{ 'selected' if customer and customer.discount_usage == 'Yes' else '' }}>Yes</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100 mt-3" id="predictBtn">
+                                <span class="loading-spinner spinner-border spinner-border-sm me-2" role="status"></span>
+                                <i class="bi bi-graph-up"></i> Get Prediction
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Live Results -->
+            <div class="col-lg-6 mb-4">
+                <div class="card prediction-result">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">Prediction Results</h5>
+                    </div>
+                    <div class="card-body" id="predictionResults">
+                        {% if prediction %}
+                        <div class="text-center mb-4">
+                            <h1 class="display-3 {{ 'text-danger' if prediction.probability > 70 else 'text-warning' if prediction.probability > 40 else 'text-success' }}">
+                                {{ "%.1f"|format(prediction.probability) }}%
+                            </h1>
+                            <p class="text-muted">Churn Probability</p>
+                        </div>
+                        <div class="alert alert-{{ 'danger' if prediction.probability > 70 else 'warning' if prediction.probability > 40 else 'success' }}">
+                            <strong>Prediction:</strong> {{ prediction.prediction_label }}
+                        </div>
+                        <div class="alert alert-{{ 'danger' if prediction.risk_level == 'High' else 'warning' if prediction.risk_level == 'Medium' else 'success' }}">
+                            <strong>Risk Level:</strong> {{ prediction.risk_level }}
+                        </div>
+                        <h6><i class="bi bi-list-check"></i> Key Factors</h6>
+                        <ul class="list-group mb-3">
+                            {% for reason in prediction.reasons[:5] %}
+                            <li class="list-group-item">
+                                <i class="bi bi-dash-circle text-danger"></i> {{ reason }}
+                            </li>
+                            {% endfor %}
+                        </ul>
+                        <a href="{{ url_for('customer_portal.recommendations') }}" class="btn btn-success w-100">
+                            <i class="bi bi-lightbulb"></i> View Recommendations
+                        </a>
+                        {% else %}
+                        <div class="alert alert-info text-center">
+                            <i class="bi bi-info-circle"></i>
+                            <p class="mb-0">Edit the data and click "Get Prediction" to see live results.</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/customer_prediction.js') }}"></script>
+{% endblock %}

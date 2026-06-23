@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+{% block title %}Analytics · {{ app_name }}{% endblock %}
+{% block page_title %}Afghanistan Telecom Churn Prediction and Retention System{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+    <div>
+        {% if meta %}
+        <span class="chip chip-good">Best Model: {{ meta.best_model }}</span>
+        <span class="muted small">Trained on {{ '{:,}'.format(meta.n_samples) }} samples · churn rate {{ (meta.churn_rate*100)|round(1) }}%</span>
+        {% else %}
+        <span class="muted">No trained model yet.</span>
+        {% endif %}
+        <span class="chip chip-good live-indicator" id="analyticsLive"><i class="bi bi-broadcast"></i> Live</span>
+    </div>
+    <div class="d-flex gap-2">
+        <div class="input-icon" style="width:280px">
+            <i class="bi bi-upload"></i>
+            <input type="file" id="csvFile" accept=".csv" class="form-control">
+        </div>
+        <button class="btn btn-gradient" id="uploadBtn"><i class="bi bi-cloud-upload"></i> Upload & Train</button>
+        <form method="POST" action="{{ url_for('analytics.train_model') }}" onsubmit="document.getElementById('trainBtn').innerHTML='<span class=\'spinner-border spinner-border-sm\'></span> Training...';document.getElementById('trainBtn').disabled=true;">
+            <button class="btn btn-gradient" id="trainBtn"><i class="bi bi-arrow-repeat"></i> {{ 'Retrain' if meta else 'Train' }} Model</button>
+        </form>
+    </div>
+</div>
+
+<div id="uploadProgress" class="alert alert-info glass d-none">
+    <div class="d-flex align-items-center gap-2">
+        <span class="spinner-border spinner-border-sm"></span>
+        <span id="uploadMessage">Uploading CSV...</span>
+    </div>
+</div>
+
+{% if meta %}
+<div class="kpi-grid kpi-grid-5">
+    {% set m = meta.metrics[meta.best_model] %}
+    <div class="kpi-card glass"><div><div class="kpi-value">{{ (m.accuracy*100)|round(1) }}%</div><div class="kpi-label">Accuracy</div></div></div>
+    <div class="kpi-card glass"><div><div class="kpi-value">{{ (m.precision*100)|round(1) }}%</div><div class="kpi-label">Precision</div></div></div>
+    <div class="kpi-card glass"><div><div class="kpi-value">{{ (m.recall*100)|round(1) }}%</div><div class="kpi-label">Recall</div></div></div>
+    <div class="kpi-card glass"><div><div class="kpi-value">{{ (m.f1*100)|round(1) }}%</div><div class="kpi-label">F1 Score</div></div></div>
+    <div class="kpi-card glass"><div><div class="kpi-value">{{ (m.roc_auc*100)|round(1) }}%</div><div class="kpi-label">ROC-AUC</div></div></div>
+</div>
+
+<div class="row g-3 mt-1">
+    <div class="col-lg-6">
+        <div class="panel glass"><h3 class="panel-title">Model Comparison (ROC-AUC)</h3><canvas id="modelCompare" height="220"></canvas></div>
+    </div>
+    <div class="col-lg-6">
+        <div class="panel glass"><h3 class="panel-title">Top Churn Factors (Feature Importance)</h3><canvas id="featureImp" height="220"></canvas></div>
+    </div>
+</div>
+
+<div class="row g-3 mt-1">
+    <div class="col-lg-4">
+        <div class="panel glass"><h3 class="panel-title">Confusion Matrix</h3>
+            <div class="confusion">
+                <div class="cm-cell cm-tn"><span>{{ meta.confusion_matrix[0][0] }}</span><small>True Negative</small></div>
+                <div class="cm-cell cm-fp"><span>{{ meta.confusion_matrix[0][1] }}</span><small>False Positive</small></div>
+                <div class="cm-cell cm-fn"><span>{{ meta.confusion_matrix[1][0] }}</span><small>False Negative</small></div>
+                <div class="cm-cell cm-tp"><span>{{ meta.confusion_matrix[1][1] }}</span><small>True Positive</small></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-8">
+        <div class="panel glass"><h3 class="panel-title">ROC Curve</h3><canvas id="rocCurve" height="200"></canvas></div>
+    </div>
+</div>
+{% endif %}
+
+<div class="row g-3 mt-1">
+    <div class="col-lg-6">
+        <div class="panel glass"><h3 class="panel-title">Churn Rate by Complaint Count</h3><canvas id="complaintChart" height="220"></canvas></div>
+    </div>
+    <div class="col-lg-6">
+        <div class="panel glass"><h3 class="panel-title">Customer Segmentation (Tenure)</h3><canvas id="segmentChart" height="220"></canvas></div>
+    </div>
+</div>
+
+<div class="row g-3 mt-1">
+    <div class="col-lg-7">
+        <div class="panel glass"><h3 class="panel-title">Province Churn Heatmap</h3>
+            <div class="table-scroll" style="max-height:360px"><div id="heatmap"></div></div>
+        </div>
+    </div>
+    <div class="col-lg-5">
+        <div class="panel glass"><h3 class="panel-title"><i class="bi bi-fire"></i> Top Risk Customers</h3>
+            <div class="table-scroll" style="max-height:360px">
+                <table class="table table-dark-glass mb-0">
+                    <thead><tr><th>ID</th><th>Province</th><th>Risk</th><th></th></tr></thead>
+                    <tbody id="topRiskBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="panel glass mt-3">
+    <h3 class="panel-title"><i class="bi bi-robot"></i> AI Insights Panel</h3>
+    <div id="aiInsights" class="ai-insights"><span class="muted">Generating insights...</span></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+<script>
+    const META = {{ meta|tojson if meta else 'null' }};
+    initAnalytics(META);
+    startLiveAnalytics(); // auto-refresh every 30s
+
+    // CSV upload handler
+    document.getElementById('uploadBtn')?.addEventListener('click', async () => {
+        const fileInput = document.getElementById('csvFile');
+        const progress = document.getElementById('uploadProgress');
+        const msg = document.getElementById('uploadMessage');
+        if (!fileInput.files[0]) {
+            alert('Please select a CSV file first.');
+            return;
+        }
+        const formData = new FormData();
+        formData.append('file', fileInput.files[0]);
+        progress.classList.remove('d-none');
+        msg.textContent = 'Uploading CSV and retraining model...';
+        try {
+            const res = await fetch('/analytics/upload-csv', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await res.json();
+            if (data.success) {
+                msg.textContent = data.message;
+                progress.classList.remove('alert-info');
+                progress.classList.add('alert-success');
+                setTimeout(() => location.reload(), 2000);
+            } else {
+                msg.textContent = data.error || 'Upload failed';
+                progress.classList.remove('alert-info');
+                progress.classList.add('alert-danger');
+            }
+        } catch (e) {
+            msg.textContent = 'Upload failed: ' + e.message;
+            progress.classList.remove('alert-info');
+            progress.classList.add('alert-danger');
+        }
+    });
+</script>
+{% endblock %}

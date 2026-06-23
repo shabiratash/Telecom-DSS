@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Real-Time Data Viewer · {{ app_name }}{% endblock %}
+{% block page_title %}Real-Time Data Viewer{% endblock %}
+
+{% block content %}
+<!-- Live Database Monitor -->
+<div class="panel glass mb-3">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div>
+            <h3 class="panel-title mb-0"><i class="bi bi-hdd-network"></i> Live Database Monitor</h3>
+            <small class="muted">Auto-refresh every 5s · <span id="ldStatus" class="text-success">Live</span> · Updated: <span id="ldLast">-</span></small>
+        </div>
+        <div class="d-flex gap-2">
+            <button class="btn btn-sm btn-gradient" id="btnRefresh"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
+            <button class="btn btn-sm btn-outline-light" id="btnPause"><i class="bi bi-pause-fill"></i> Pause</button>
+            <button class="btn btn-sm btn-outline-light" id="btnResume" disabled><i class="bi bi-play-fill"></i> Resume</button>
+        </div>
+    </div>
+    <div class="kpi-grid kpi-grid-3 mt-3">
+        <div class="kpi-card"><div class="kpi-label">Total Customers</div><div class="kpi-value" id="mTotalCust">-</div></div>
+        <div class="kpi-card"><div class="kpi-label">Total Predictions</div><div class="kpi-value" id="mTotalPred">-</div></div>
+        <div class="kpi-card"><div class="kpi-label">High-Risk Customers</div><div class="kpi-value" id="mHighRisk">-</div></div>
+        <div class="kpi-card"><div class="kpi-label">Total Recommendations</div><div class="kpi-value" id="mTotalRec">-</div></div>
+        <div class="kpi-card"><div class="kpi-label">Records Added Today</div><div class="kpi-value" id="mToday">-</div></div>
+        <div class="kpi-card"><div class="kpi-label">Records This Week</div><div class="kpi-value" id="mWeek">-</div></div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-6">
+        <div class="panel glass h-100">
+            <h3 class="panel-title"><i class="bi bi-people"></i> Latest Customers</h3>
+            <div id="feedCustomers" class="live-feed"><p class="muted">Loading…</p></div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="panel glass h-100">
+            <h3 class="panel-title"><i class="bi bi-cpu"></i> Latest Predictions</h3>
+            <div id="feedPredictions" class="live-feed"><p class="muted">Loading…</p></div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="panel glass h-100">
+            <h3 class="panel-title"><i class="bi bi-lightbulb"></i> Latest Recommendations</h3>
+            <div id="feedRecs" class="live-feed"><p class="muted">Loading…</p></div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="panel glass h-100">
+            <h3 class="panel-title"><i class="bi bi-activity"></i> Latest Risk Scores</h3>
+            <div id="feedRisk" class="live-feed"><p class="muted">Loading…</p></div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/live_data.js') }}"></script>
+{% endblock %}

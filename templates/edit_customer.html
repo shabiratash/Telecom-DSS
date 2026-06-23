@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Edit Customer · {{ app_name }}{% endblock %}
+{% block page_title %}Edit Customer #{{ customer.customer_id }}{% endblock %}
+
+{% macro val(c, key, default='') %}{% if c %}{{ c[key] if c is mapping else c|attr(key) }}{% else %}{{ default }}{% endif %}{% endmacro %}
+
+{% block content %}
+<div class="panel glass" style="max-width:1000px">
+    <h3 class="panel-title"><i class="bi bi-pencil-square"></i> Edit Customer #{{ customer.customer_id }}</h3>
+    <div class="alert alert-info glass small">
+        <i class="bi bi-info-circle"></i> Age: 18-70 | Recharge: 50-5000 AFN | Frequency: 1-30/month | Tenure: 1-120 months
+    </div>
+    <form method="POST" action="{{ url_for('customer.edit_customer', customer_id=customer.customer_id) }}">
+        {% set c = customer %}
+        {% include "_customer_form.html" with context %}
+        <div class="mt-4 d-flex gap-2">
+            <button class="btn btn-gradient"><i class="bi bi-save"></i> Update Customer</button>
+            <a href="{{ url_for('customer.profile', customer_id=customer.customer_id) }}" class="btn btn-outline-light">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

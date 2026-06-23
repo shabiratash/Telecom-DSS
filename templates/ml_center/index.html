@@ -1,0 +1,195 @@
+{% extends "base.html" %}
+{% block title %}Machine Learning Center · {{ app_name }}{% endblock %}
+{% block page_title %}Afghanistan Telecom Churn Prediction and Retention System{% endblock %}
+
+{% block content %}
+<!-- Dataset Overview -->
+<div class="panel glass animate-up" style="--d:0">
+    <h3 class="panel-title"><i class="bi bi-database"></i> Dataset Overview</h3>
+    {% if dataset_info %}
+    <div class="kpi-grid kpi-grid-5">
+        <div class="kpi-card">
+            <div class="kpi-icon bg-blue"><i class="bi bi-file-earmark-text"></i></div>
+            <div><div class="kpi-value">{{ '{:,}'.format(dataset_info.total_records) }}</div><div class="kpi-label">Total Records</div></div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-icon bg-purple"><i class="bi bi-list-check"></i></div>
+            <div><div class="kpi-value">{{ dataset_info.feature_count }}</div><div class="kpi-label">Features</div></div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-icon bg-green"><i class="bi bi-bullseye"></i></div>
+            <div><div class="kpi-value">{{ dataset_info.target_column }}</div><div class="kpi-label">Target Column</div></div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-icon bg-orange"><i class="bi bi-exclamation-circle"></i></div>
+            <div><div class="kpi-value">{{ dataset_info.missing_values }}</div><div class="kpi-label">Missing Values</div></div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-icon bg-teal"><i class="bi bi-split"></i></div>
+            <div><div class="kpi-value">{{ dataset_info.train_test_ratio }}</div><div class="kpi-label">Train/Test Split</div></div>
+        </div>
+    </div>
+    {% else %}
+    <div class="alert alert-warning glass">
+        <i class="bi bi-exclamation-triangle"></i> Dataset not found at {{ config.DATASET_PATH }}
+    </div>
+    {% endif %}
+</div>
+
+<!-- Training Center -->
+<div class="panel glass animate-up" style="--d:1">
+    <h3 class="panel-title"><i class="bi bi-cpu"></i> Training Center</h3>
+    <p class="muted mb-3">Train and compare multiple ML models (Logistic Regression, Decision Tree, Random Forest, XGBoost)</p>
+    <button id="trainBtn" class="btn btn-gradient" onclick="trainModels()">
+        <i class="bi bi-play-circle"></i> Train Models
+    </button>
+    <span id="trainStatus" class="ms-3"></span>
+</div>
+
+<!-- Model Comparison -->
+<div class="panel glass animate-up" style="--d:2">
+    <h3 class="panel-title"><i class="bi bi-bar-chart"></i> Model Comparison</h3>
+    <div class="table-scroll">
+        <table class="table table-dark-glass mb-0">
+            <thead>
+                <tr>
+                    <th>Model</th>
+                    <th>Accuracy</th>
+                    <th>Precision</th>
+                    <th>Recall</th>
+                    <th>F1 Score</th>
+                    <th>ROC AUC</th>
+                </tr>
+            </thead>
+            <tbody id="modelComparisonBody">
+                <tr><td colspan="6" class="text-center muted">Train models to see comparison</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="row g-3 mt-1">
+    <!-- Confusion Matrix -->
+    <div class="col-lg-6">
+        <div class="panel glass animate-up" style="--d:3">
+            <h3 class="panel-title"><i class="bi bi-grid-3x3"></i> Confusion Matrix (Best Model)</h3>
+            <div id="confusionMatrixContainer" class="text-center">
+                <div class="placeholder-panel">
+                    <i class="bi bi-grid-3x3 big-icon"></i>
+                    <p class="muted">Train models to see confusion matrix</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ROC Curve -->
+    <div class="col-lg-6">
+        <div class="panel glass animate-up" style="--d:4">
+            <h3 class="panel-title"><i class="bi bi-graph-up"></i> ROC Curve (Best Model)</h3>
+            <div id="rocCurveContainer">
+                <div class="placeholder-panel">
+                    <i class="bi bi-graph-up big-icon"></i>
+                    <p class="muted">Train models to see ROC curve</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Feature Importance -->
+<div class="panel glass animate-up" style="--d:5">
+    <h3 class="panel-title"><i class="bi bi-list-stars"></i> Feature Importance (Best Model)</h3>
+    <div id="featureImportanceContainer">
+        <div class="placeholder-panel">
+            <i class="bi bi-list-stars big-icon"></i>
+            <p class="muted">Train models to see feature importance</p>
+        </div>
+    </div>
+</div>
+
+<!-- Best Model Card -->
+<div class="panel glass animate-up" style="--d:6">
+    <h3 class="panel-title"><i class="bi bi-trophy"></i> Best Model Card</h3>
+    <div id="bestModelCard">
+        {% if model_bundle %}
+        <div class="kpi-grid kpi-grid-5">
+            <div class="kpi-card">
+                <div class="kpi-icon bg-purple"><i class="bi bi-cpu"></i></div>
+                <div><div class="kpi-value" style="font-size:1.2rem">{{ model_bundle.best_model }}</div><div class="kpi-label">Model Name</div></div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-icon bg-green"><i class="bi bi-check-circle"></i></div>
+                <div><div class="kpi-value">{{ (model_bundle.metrics[model_bundle.best_model].accuracy * 100)|round(1) }}%</div><div class="kpi-label">Accuracy</div></div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-icon bg-blue"><i class="bi bi-calendar"></i></div>
+                <div><div class="kpi-value" style="font-size:1rem" id="trainingDate">-</div><div class="kpi-label">Training Date</div></div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-icon bg-orange"><i class="bi bi-people"></i></div>
+                <div><div class="kpi-value">{{ '{:,}'.format(model_bundle.n_samples) }}</div><div class="kpi-label">Samples</div></div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-icon bg-red"><i class="bi bi-person-dash"></i></div>
+                <div><div class="kpi-value">{{ (model_bundle.churn_rate * 100)|round(1) }}%</div><div class="kpi-label">Churn Rate</div></div>
+            </div>
+        </div>
+        {% else %}
+        <div class="placeholder-panel">
+            <i class="bi bi-trophy big-icon"></i>
+            <p class="muted">Train models to see best model card</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Model History -->
+<div class="panel glass animate-up" style="--d:7">
+    <h3 class="panel-title"><i class="bi bi-clock-history"></i> Model Training History</h3>
+    <div class="table-scroll" style="max-height:300px">
+        <table class="table table-dark-glass mb-0">
+            <thead>
+                <tr>
+                    <th>Model</th>
+                    <th>Accuracy</th>
+                    <th>F1 Score</th>
+                    <th>Training Date</th>
+                    <th>Best</th>
+                </tr>
+            </thead>
+            <tbody id="modelHistoryBody">
+                {% for history in model_history %}
+                <tr>
+                    <td>{{ history.model_name }}</td>
+                    <td>{{ (history.accuracy * 100)|round(2) }}%</td>
+                    <td>{{ (history.f1_score * 100)|round(2) }}%</td>
+                    <td>{{ history.training_date.strftime('%Y-%m-%d %H:%M') }}</td>
+                    <td>
+                        {% if history.is_best_model %}
+                        <span class="badge-active">Best</span>
+                        {% else %}
+                        <span class="muted">-</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="5" class="text-center muted">No training history</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Model Download -->
+<div class="panel glass animate-up" style="--d:8">
+    <h3 class="panel-title"><i class="bi bi-download"></i> Model Download</h3>
+    <p class="muted mb-3">Download the trained model file for external use or backup</p>
+    <a href="{{ url_for('ml_center.download_model') }}" class="btn btn-gradient">
+        <i class="bi bi-download"></i> Download Model (churn_model.pkl)
+    </a>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/ml_center.js') }}"></script>
+{% endblock %}

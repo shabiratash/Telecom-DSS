@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{{ app_name }}{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block head %}{% endblock %}
+</head>
+<body>
+<div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-brand">
+            <i class="bi bi-broadcast"></i>
+            <span>Telecom <strong>PRS</strong></span>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="{{ url_for('dashboard.index') }}" class="nav-link {% if request.endpoint=='dashboard.index' %}active{% endif %}">
+                <i class="bi bi-grid-1x2"></i><span>Dashboard</span></a>
+            <a href="{{ url_for('customer.list_customers') }}" class="nav-link {% if request.blueprint=='customer' %}active{% endif %}">
+                <i class="bi bi-people"></i><span>Customers</span></a>
+            <a href="{{ url_for('prediction.predict_page') }}" class="nav-link {% if request.blueprint=='prediction' %}active{% endif %}">
+                <i class="bi bi-cpu"></i><span>Prediction</span></a>
+            <a href="{{ url_for('whatif_simulator.index') }}" class="nav-link {% if request.blueprint=='whatif_simulator' %}active{% endif %}">
+                <i class="bi bi-sliders"></i><span>What-If Simulator</span></a>
+            <a href="{{ url_for('analytics.index') }}" class="nav-link {% if request.endpoint=='analytics.index' %}active{% endif %}">
+                <i class="bi bi-graph-up-arrow"></i><span>Analytics</span></a>
+            <a href="{{ url_for('analytics.model_diagnostics') }}" class="nav-link {% if request.endpoint=='analytics.model_diagnostics' %}active{% endif %}">
+                <i class="bi bi-clipboard2-pulse"></i><span>Model Diagnostics</span></a>
+            <a href="{{ url_for('analytics.live_data') }}" class="nav-link {% if request.endpoint=='analytics.live_data' %}active{% endif %}">
+                <i class="bi bi-hdd-network"></i><span>Real-Time Data</span></a>
+            <a href="{{ url_for('ml_center.index') }}" class="nav-link {% if request.blueprint=='ml_center' %}active{% endif %}">
+                <i class="bi bi-robot"></i><span>ML Center</span></a>
+            <a href="{{ url_for('early_warning.index') }}" class="nav-link {% if request.blueprint=='early_warning' %}active{% endif %}">
+                <i class="bi bi-exclamation-triangle"></i><span>Early Warning</span></a>
+            <a href="{{ url_for('financial.index') }}" class="nav-link {% if request.blueprint=='financial' %}active{% endif %}">
+                <i class="bi bi-currency-dollar"></i><span>Financial Impact</span></a>
+            <div class="nav-section">Reports</div>
+            <a href="{{ url_for('reports.export_pdf') }}" class="nav-link"><i class="bi bi-file-earmark-pdf"></i><span>PDF Report</span></a>
+            <a href="{{ url_for('reports.export_excel') }}" class="nav-link"><i class="bi bi-file-earmark-excel"></i><span>Excel Export</span></a>
+            <a href="{{ url_for('reports.export_csv') }}" class="nav-link"><i class="bi bi-filetype-csv"></i><span>CSV Export</span></a>
+        </nav>
+        <div class="sidebar-footer">
+            <a href="{{ url_for('auth.logout') }}" class="nav-link logout"><i class="bi bi-box-arrow-right"></i><span>Logout</span></a>
+        </div>
+    </aside>
+
+    <div class="main">
+        <header class="topbar">
+            <button class="menu-toggle" id="menuToggle"><i class="bi bi-list"></i></button>
+            <h1 class="page-title">{% block page_title %}{% endblock %}</h1>
+            <div class="topbar-right">
+                <button class="btn-icon" id="themeToggle" title="Toggle Theme"><i class="bi bi-moon"></i></button>
+                <span class="badge-user"><i class="bi bi-person-circle"></i> {{ current_user or 'Admin' }}</span>
+            </div>
+        </header>
+
+        <main class="content">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+              {% if messages %}
+                <div class="flash-wrap">
+                {% for category, message in messages %}
+                  <div class="alert alert-{{ category }} alert-dismissible fade show glass" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                  </div>
+                {% endfor %}
+                </div>
+              {% endif %}
+            {% endwith %}
+
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Early Warning System · {{ app_name }}{% endblock %}
+{% block page_title %}Early Warning System{% endblock %}
+
+{% block content %}
+<div class="row g-3">
+    <div class="col-lg-8">
+        <div class="panel glass animate-up" style="--d:0">
+            <h3 class="panel-title"><i class="bi bi-exclamation-triangle-fill text-danger"></i> Active Alerts</h3>
+            <div class="table-scroll" style="max-height:400px">
+                <table class="table table-dark-glass mb-0">
+                    <thead><tr><th>ID</th><th>Province</th><th>Previous Risk</th><th>Current Risk</th><th>Increase</th><th>Level</th><th>Time</th></tr></thead>
+                    <tbody id="alertsBody">
+                        <tr><td colspan="7" class="text-center muted py-4">Loading alerts...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="panel glass animate-up" style="--d:1">
+            <h3 class="panel-title"><i class="bi bi-clock-history text-info"></i> Recent Warnings</h3>
+            <div class="table-scroll" style="max-height:400px">
+                <table class="table table-dark-glass mb-0">
+                    <thead><tr><th>ID</th><th>Province</th><th>Risk</th><th>Time</th></tr></thead>
+                    <tbody id="warningsBody">
+                        <tr><td colspan="4" class="text-center muted py-4">Loading warnings...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="panel glass mt-3 animate-up" style="--d:2">
+    <h3 class="panel-title"><i class="bi bi-graph-up-arrow"></i> Top Risk Customers - Trend Analysis</h3>
+    <div class="table-scroll" style="max-height:350px">
+        <table class="table table-dark-glass mb-0">
+            <thead><tr><th>ID</th><th>Province</th><th>Current Risk</th><th>Risk Trend (Last 10)</th></tr></thead>
+            <tbody id="topRiskBody">
+                <tr><td colspan="4" class="text-center muted py-4">Loading top risk customers...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/early_warning.js') }}"></script>
+{% endblock %}

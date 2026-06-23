@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block title %}Customers · {{ app_name }}{% endblock %}
+{% block page_title %}Afghanistan Telecom Churn Prediction and Retention System{% endblock %}
+
+{% block content %}
+<div class="panel glass">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+        <div class="d-flex align-items-center gap-2">
+            <a href="{{ url_for('dashboard.index') }}" class="btn btn-icon" title="Back to Dashboard"><i class="bi bi-arrow-left"></i></a>
+            <h3 class="panel-title mb-0">Customers <span class="muted small">({{ pagination.total }})</span></h3>
+        </div>
+        <a href="{{ url_for('customer.add_customer') }}" class="btn btn-gradient btn-sm"><i class="bi bi-plus-lg"></i> Add Customer</a>
+    </div>
+
+    <form class="filter-bar" method="GET" action="{{ url_for('customer.list_customers') }}">
+        <div class="input-icon flex-grow-1">
+            <i class="bi bi-search"></i>
+            <input type="text" name="search" class="form-control" placeholder="Search by ID, province, gender" value="{{ filters.search }}">
+        </div>
+        <select name="province_id" class="form-select">
+            <option value="">All Provinces</option>
+            {% for p in options.provinces %}
+            <option value="{{ p.province_id }}" {% if filters.province_id==p.province_id %}selected{% endif %}>{{ p.province_name }}</option>
+            {% endfor %}
+        </select>
+        <select name="network_quality" class="form-select">
+            <option value="">Any Network</option>
+            {% for n in options.network_quality %}
+            <option value="{{ n }}" {% if filters.network_quality==n %}selected{% endif %}>{{ n }}</option>
+            {% endfor %}
+        </select>
+        <select name="churn" class="form-select">
+            <option value="">Any Status</option>
+            <option value="0" {% if filters.churn=='0' %}selected{% endif %}>Active</option>
+            <option value="1" {% if filters.churn=='1' %}selected{% endif %}>Churned</option>
+        </select>
+        <button class="btn btn-gradient"><i class="bi bi-funnel"></i> Filter</button>
+        <a href="{{ url_for('customer.list_customers') }}" class="btn btn-outline-light">Reset</a>
+    </form>
+
+    <div class="table-scroll mt-3">
+        <table class="table table-dark-glass align-middle">
+            <thead>
+                <tr>
+                    <th>ID</th><th>Age</th><th>Gender</th><th>Province</th><th>Network</th>
+                    <th>Recharge</th><th>Complaints</th><th>Status</th><th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="tbody-customer">
+            {% for c in customers %}
+                <tr>
+                    <td>#{{ c.customer_id }}</td>
+                    <td>{{ c.age }}</td>
+                    <td>{{ c.gender }}</td>
+                    <td>{{ c.province.province_name }}</td>
+                    <td><span class="chip chip-{{ c.network_quality|lower }}">{{ c.network_quality }}</span></td>
+                    <td>{{ c.recharge_amount }}</td>
+                    <td>{{ c.complaint_count }}</td>
+                    <td>
+                        {% if c.churn==1 %}<span class="badge badge-churn">Churned</span>
+                        {% else %}<span class="badge badge-active">Active</span>{% endif %}
+                    </td>
+                    <td class="text-end text-nowrap">
+                        <a href="{{ url_for('customer.profile', customer_id=c.customer_id) }}" class="btn btn-icon" title="View"><i class="bi bi-eye"></i></a>
+                        <a href="{{ url_for('customer.edit_customer', customer_id=c.customer_id) }}" class="btn btn-icon" title="Edit"><i class="bi bi-pencil"></i></a>
+                        <button class="btn btn-icon text-danger" title="Delete" onclick="confirmDelete({{ c.customer_id }})"><i class="bi bi-trash"></i></button>
+                    </td>
+                </tr>
+            {% else %}
+                <tr><td colspan="9" class="text-center muted py-4">No customers found.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if pagination.pages > 1 %}
+    <nav class="mt-3">
+        <ul class="pagination pagination-glass justify-content-center">
+            <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+                <a class="page-link" href="{{ url_for('customer.list_customers', page=pagination.prev_num, search=filters.search, province_id=filters.province_id, churn=filters.churn, network_quality=filters.network_quality) }}">&laquo;</a>
+            </li>
+            {% for p in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                {% if p %}
+                <li class="page-item {% if p==pagination.page %}active{% endif %}">
+                    <a class="page-link" href="{{ url_for('customer.list_customers', page=p, search=filters.search, province_id=filters.province_id, churn=filters.churn, network_quality=filters.network_quality) }}">{{ p }}</a>
+                </li>
+                {% else %}
+                <li class="page-item disabled"><span class="page-link">…</span></li>
+                {% endif %}
+            {% endfor %}
+            <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+                <a class="page-link" href="{{ url_for('customer.list_customers', page=pagination.next_num, search=filters.search, province_id=filters.province_id, churn=filters.churn, network_quality=filters.network_quality) }}">&raquo;</a>
+            </li>
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function confirmDelete(customerId) {
+    if (confirm(`Are you sure you want to delete customer #${customerId}? This action cannot be undone.`)) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/customers/${customerId}/delete`;
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+</script>
+{% endblock %}

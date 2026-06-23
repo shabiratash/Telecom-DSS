@@ -1,0 +1,20 @@
+{% extends "customer_workspace/base.html" %}
+{% block title %}Add Customer · {{ app_name }}{% endblock %}
+{% block page_title %}Add Customer{% endblock %}
+
+{% block content %}
+<div class="panel glass" style="max-width:1000px">
+    <h3 class="panel-title"><i class="bi bi-person-plus"></i> New Customer</h3>
+    <div class="alert alert-info glass small">
+        <i class="bi bi-info-circle"></i> Age: 18-70 | Recharge: 50-5000 AFN | Frequency: 1-30/month | Tenure: 1-120 months
+    </div>
+    <form method="POST" action="{{ url_for('customer.add_customer') }}">
+        {% set c = form %}
+        {% include "_customer_form.html" with context %}
+        <div class="mt-4 d-flex gap-2">
+            <button class="btn btn-gradient"><i class="bi bi-check-lg"></i> Save Customer</button>
+            <a href="{{ url_for('customer.list_customers') }}" class="btn btn-outline-light">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,131 @@
+{% extends "customer_portal/base.html" %}
+
+{% block title %}Home{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2 class="mb-4">Welcome to Your Customer Portal</h2>
+        
+        {% if not model_available %}
+        <div class="alert alert-warning">
+            <i class="bi bi-exclamation-triangle"></i>
+            <strong>ML Model Not Available:</strong> Prediction features are currently disabled. Please contact support.
+        </div>
+        {% endif %}
+        
+        {% if customer %}
+        <div class="row g-4">
+            <!-- Customer Overview Card -->
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="bi bi-person"></i> Your Profile</h5>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-borderless">
+                            <tr>
+                                <td><strong>Customer ID:</strong></td>
+                                <td>{{ customer.customer_id }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Age:</strong></td>
+                                <td>{{ customer.age }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Gender:</strong></td>
+                                <td>{{ customer.gender }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Province:</strong></td>
+                                <td>{{ customer.province.province_name if customer.province else 'N/A' }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Network Quality:</strong></td>
+                                <td>
+                                    <span class="badge bg-{{ 'success' if customer.network_quality == 'Excellent' or customer.network_quality == 'Good' else 'warning' if customer.network_quality == 'Average' else 'danger' }}">
+                                        {{ customer.network_quality }}
+                                    </span>
+                                </td>
+                            </tr>
+                        </table>
+                        <a href="{{ url_for('customer_portal.profile') }}" class="btn btn-outline-primary btn-sm">View Full Profile</a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Health Status Card -->
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0"><i class="bi bi-heart-pulse"></i> Health Status</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="text-center mb-3">
+                            <h3 class="display-4">{{ customer.health_score() }}</h3>
+                            <p class="text-muted">Health Score</p>
+                        </div>
+                        <div class="progress mb-3" style="height: 25px;">
+                            <div class="progress-bar bg-{{ 'success' if customer.health_score() > 80 else 'warning' if customer.health_score() > 60 else 'danger' }}" 
+                                 role="progressbar" 
+                                 style="width: {{ customer.health_score() }}%">
+                                {{ customer.health_score() }}%
+                            </div>
+                        </div>
+                        <p class="text-center">
+                            <strong>Status:</strong>
+                            <span class="badge bg-{{ 'success' if customer.health_status() == 'Excellent' or customer.health_status() == 'Good' else 'warning' if customer.health_status() == 'Warning' else 'danger' }}">
+                                {{ customer.health_status() }}
+                            </span>
+                        </p>
+                        <a href="{{ url_for('customer_portal.risk_status') }}" class="btn btn-outline-info btn-sm w-100">View Risk Details</a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Quick Actions -->
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header bg-secondary text-white">
+                        <h5 class="mb-0"><i class="bi bi-lightning"></i> Quick Actions</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <a href="{{ url_for('customer_portal.prediction') }}" class="btn btn-primary w-100 h-100 d-flex flex-column align-items-center justify-content-center">
+                                    <i class="bi bi-graph-up fs-4"></i>
+                                    <span class="mt-2">Get Prediction</span>
+                                </a>
+                            </div>
+                            <div class="col-md-3">
+                                <a href="{{ url_for('customer_portal.risk_status') }}" class="btn btn-info w-100 h-100 d-flex flex-column align-items-center justify-content-center">
+                                    <i class="bi bi-shield-exclamation fs-4"></i>
+                                    <span class="mt-2">Check Risk</span>
+                                </a>
+                            </div>
+                            <div class="col-md-3">
+                                <a href="{{ url_for('customer_portal.recommendations') }}" class="btn btn-success w-100 h-100 d-flex flex-column align-items-center justify-content-center">
+                                    <i class="bi bi-lightbulb fs-4"></i>
+                                    <span class="mt-2">Recommendations</span>
+                                </a>
+                            </div>
+                            <div class="col-md-3">
+                                <a href="{{ url_for('customer_portal.profile') }}" class="btn btn-secondary w-100 h-100 d-flex flex-column align-items-center justify-content-center">
+                                    <i class="bi bi-person-gear fs-4"></i>
+                                    <span class="mt-2">My Profile</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle"></i>
+            No customer data available. Please contact support to set up your account.
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

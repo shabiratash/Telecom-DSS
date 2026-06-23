@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block title %}Prediction · {{ app_name }}{% endblock %}
+{% block page_title %}Afghanistan Telecom Churn Prediction and Retention System{% endblock %}
+
+{% block content %}
+{% if not model_ready %}
+<div class="alert alert-warning glass d-flex justify-content-between align-items-center">
+    <span><i class="bi bi-exclamation-triangle"></i> Model not trained. Train it on the Analytics page first.</span>
+    <a href="{{ url_for('analytics.index') }}" class="btn btn-sm btn-gradient">Go to Analytics</a>
+</div>
+{% endif %}
+
+<div class="panel glass mb-3">
+    <h3 class="panel-title"><i class="bi bi-file-earmark-spreadsheet"></i> Batch Prediction (CSV Upload)</h3>
+    <p class="muted small">Upload a CSV file with customer data to predict churn for multiple records at once. The file must contain all required feature columns.</p>
+    <div class="d-flex gap-2 align-items-center">
+        <div class="input-icon" style="width:280px">
+            <i class="bi bi-upload"></i>
+            <input type="file" id="batchCsvFile" accept=".csv" class="form-control">
+        </div>
+        <button class="btn btn-gradient" id="batchPredictBtn"><i class="bi bi-lightning-charge"></i> Predict All</button>
+    </div>
+    <div id="batchProgress" class="alert alert-info glass d-none mt-2">
+        <div class="d-flex align-items-center gap-2">
+            <span class="spinner-border spinner-border-sm"></span>
+            <span id="batchMessage">Processing predictions...</span>
+        </div>
+    </div>
+    <div id="batchResult" class="d-none mt-2">
+        <a id="downloadLink" href="#" class="btn btn-success"><i class="bi bi-download"></i> Download Results</a>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-7">
+        <div class="panel glass">
+            <h3 class="panel-title"><i class="bi bi-cpu"></i> Single Customer Prediction</h3>
+            <form method="POST" action="{{ url_for('prediction.predict_page') }}" id="predictForm">
+                {% set c = form %}
+                {% include "_customer_form_predict.html" %}
+                <div class="mt-4 d-flex align-items-center gap-2">
+                    <button class="btn btn-gradient btn-lg flex-grow-1" id="predictBtn">
+                        <i class="bi bi-lightning-charge"></i> Predict Churn
+                    </button>
+                    <span class="chip chip-good live-indicator" id="liveIndicator"><i class="bi bi-broadcast"></i> Live</span>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="col-lg-5">
+        <div id="resultContainer" class="sticky-result">
+            <div class="panel glass placeholder-panel" id="resultPlaceholder">
+                <i class="bi bi-graph-up-arrow big-icon"></i>
+                <p class="muted">Start entering customer data to see the AI-powered churn probability, risk level, and tailored retention recommendations update <b>live</b>.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const MODEL_READY = {{ 'true' if model_ready else 'false' }};
+initLivePrediction(MODEL_READY);
+
+// Batch prediction handler
+document.getElementById('batchPredictBtn')?.addEventListener('click', async () => {
+    const fileInput = document.getElementById('batchCsvFile');
+    const progress = document.getElementById('batchProgress');
+    const msg = document.getElementById('batchMessage');
+    const result = document.getElementById('batchResult');
+    const downloadLink = document.getElementById('downloadLink');
+    if (!fileInput.files[0]) {
+        alert('Please select a CSV file first.');
+        return;
+    }
+    const formData = new FormData();
+    formData.append('file', fileInput.files[0]);
+    progress.classList.remove('d-none');
+    result.classList.add('d-none');
+    msg.textContent = 'Processing predictions...';
+    try {
+        const res = await fetch('/prediction/batch-predict', {
+            method: 'POST',
+            body: formData
+        });
+        const data = await res.json();
+        if (data.success) {
+            msg.textContent = data.message;
+            progress.classList.remove('alert-info');
+            progress.classList.add('alert-success');
+            downloadLink.href = data.download_url;
+            result.classList.remove('d-none');
+        } else {
+            msg.textContent = data.error || 'Prediction failed';
+            progress.classList.remove('alert-info');
+            progress.classList.add('alert-danger');
+        }
+    } catch (e) {
+        msg.textContent = 'Prediction failed: ' + e.message;
+        progress.classList.remove('alert-info');
+        progress.classList.add('alert-danger');
+    }
+});
+</script>
+{% endblock %}

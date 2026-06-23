@@ -1,0 +1,204 @@
+{% extends "customer_portal/base.html" %}
+
+{% block title %}Live Data Viewer{% endblock %}
+
+{% block extra_css %}
+<style>
+.kpi-card { transition: transform 0.2s; }
+.kpi-card:hover { transform: translateY(-2px); }
+.refresh-indicator { 
+    display: inline-block; 
+    width: 10px; 
+    height: 10px; 
+    border-radius: 50%; 
+    background: #28a745; 
+    animation: pulse 2s infinite; 
+}
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="mb-0"><i class="bi bi-activity"></i> Real-Time Data Viewer</h2>
+            <div class="d-flex align-items-center gap-3">
+                <span class="refresh-indicator"></span>
+                <span class="text-muted small">Live</span>
+                <button id="pauseBtn" class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-pause"></i> Pause
+                </button>
+                <button id="refreshBtn" class="btn btn-sm btn-primary">
+                    <i class="bi bi-arrow-clockwise"></i> Refresh
+                </button>
+            </div>
+        </div>
+        
+        <!-- KPI Cards -->
+        <div class="row g-4 mb-4">
+            <div class="col-md-3">
+                <div class="card kpi-card bg-primary text-white">
+                    <div class="card-body">
+                        <h6 class="card-title"><i class="bi bi-people"></i> Total Customers</h6>
+                        <h3 class="display-6" id="totalCustomers">-</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card kpi-card bg-danger text-white">
+                    <div class="card-body">
+                        <h6 class="card-title"><i class="bi bi-person-x"></i> Churned</h6>
+                        <h3 class="display-6" id="churnedCount">-</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card kpi-card bg-warning text-dark">
+                    <div class="card-body">
+                        <h6 class="card-title"><i class="bi bi-percent"></i> Churn Rate</h6>
+                        <h3 class="display-6" id="churnRate">-%</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card kpi-card bg-success text-white">
+                    <div class="card-body">
+                        <h6 class="card-title"><i class="bi bi-heart-pulse"></i> Avg Health Score</h6>
+                        <h3 class="display-6" id="avgHealth">-</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Latest Customer -->
+        <div class="card mb-4">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="bi bi-person-plus"></i> Latest Customer Record</h5>
+            </div>
+            <div class="card-body" id="latestCustomer">
+                <div class="text-center text-muted">
+                    <i class="bi bi-hourglass-split"></i> Loading...
+                </div>
+            </div>
+        </div>
+        
+        <!-- Last Updated -->
+        <div class="text-center text-muted small">
+            Last updated: <span id="lastUpdated">-</span>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let isPaused = false;
+let refreshInterval;
+
+document.addEventListener('DOMContentLoaded', function() {
+    const pauseBtn = document.getElementById('pauseBtn');
+    const refreshBtn = document.getElementById('refreshBtn');
+    
+    // Initial load
+    fetchData();
+    
+    // Auto-refresh every 5 seconds
+    refreshInterval = setInterval(() => {
+        if (!isPaused) {
+            fetchData();
+        }
+    }, 5000);
+    
+    // Pause/Resume button
+    pauseBtn.addEventListener('click', function() {
+        isPaused = !isPaused;
+        if (isPaused) {
+            pauseBtn.innerHTML = '<i class="bi bi-play"></i> Resume';
+            pauseBtn.classList.remove('btn-outline-secondary');
+            pauseBtn.classList.add('btn-outline-success');
+        } else {
+            pauseBtn.innerHTML = '<i class="bi bi-pause"></i> Pause';
+            pauseBtn.classList.remove('btn-outline-success');
+            pauseBtn.classList.add('btn-outline-secondary');
+            fetchData();
+        }
+    });
+    
+    // Manual refresh button
+    refreshBtn.addEventListener('click', function() {
+        fetchData();
+    });
+});
+
+async function fetchData() {
+    try {
+        const response = await fetch('/customer-portal/api/live-data');
+        const data = await response.json();
+        
+        if (response.ok) {
+            updateKPIs(data.stats);
+            updateLatestCustomer(data.latest_customer);
+            updateTimestamp();
+        } else {
+            console.error('Error:', data.error);
+        }
+    } catch (error) {
+        console.error('Fetch error:', error);
+    }
+}
+
+function updateKPIs(stats) {
+    document.getElementById('totalCustomers').textContent = stats.total_customers || 0;
+    document.getElementById('churnedCount').textContent = stats.churned_count || 0;
+    document.getElementById('churnRate').textContent = (stats.churn_rate || 0) + '%';
+    document.getElementById('avgHealth').textContent = stats.avg_health_score || 0;
+}
+
+function updateLatestCustomer(customer) {
+    const container = document.getElementById('latestCustomer');
+    
+    if (!customer) {
+        container.innerHTML = '<div class="text-center text-muted">No customer data available</div>';
+        return;
+    }
+    
+    container.innerHTML = `
+        <div class="row">
+            <div class="col-md-6">
+                <table class="table table-sm table-borderless">
+                    <tr><td><strong>ID:</strong></td><td>${customer.customer_id}</td></tr>
+                    <tr><td><strong>Age:</strong></td><td>${customer.age}</td></tr>
+                    <tr><td><strong>Gender:</strong></td><td>${customer.gender}</td></tr>
+                    <tr><td><strong>Province:</strong></td><td>${customer.province_name || 'N/A'}</td></tr>
+                    <tr><td><strong>Area:</strong></td><td>${customer.area_type}</td></tr>
+                    <tr><td><strong>Network:</strong></td><td>${customer.network_quality}</td></tr>
+                </table>
+            </div>
+            <div class="col-md-6">
+                <table class="table table-sm table-borderless">
+                    <tr><td><strong>Recharge:</strong></td><td>$${customer.recharge_amount.toFixed(2)}</td></tr>
+                    <tr><td><strong>Frequency:</strong></td><td>${customer.recharge_frequency}/mo</td></tr>
+                    <tr><td><strong>Tenure:</strong></td><td>${customer.tenure_months} mo</td></tr>
+                    <tr><td><strong>Inactive:</strong></td><td>${customer.inactive_days} days</td></tr>
+                    <tr><td><strong>Complaints:</strong></td><td>${customer.complaint_count}</td></tr>
+                    <tr><td><strong>Churn:</strong></td><td>
+                        <span class="badge bg-${customer.churn === 1 ? 'danger' : 'success'}">
+                            ${customer.churn === 1 ? 'Yes' : 'No'}
+                        </span>
+                    </td></tr>
+                </table>
+            </div>
+        </div>
+    `;
+}
+
+function updateTimestamp() {
+    const now = new Date();
+    document.getElementById('lastUpdated').textContent = now.toLocaleTimeString();
+}
+</script>
+{% endblock %}

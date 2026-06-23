@@ -1,0 +1,48 @@
+{% extends "customer_workspace/base.html" %}
+{% block title %}Customer Health Scores · {{ app_name }}{% endblock %}
+{% block page_title %}Customer Health Scores{% endblock %}
+
+{% block content %}
+<div class="panel glass">
+    <h3 class="panel-title"><i class="bi bi-heart-pulse"></i> Health Scores <span class="muted small">({{ pagination.total }})</span></h3>
+    <div class="table-scroll mt-2">
+        <table class="table table-dark-glass align-middle">
+            <thead><tr><th>ID</th><th>Province</th><th>Age</th><th>Network</th><th>Complaints</th><th>Health Score</th><th>Status</th><th class="text-end">Action</th></tr></thead>
+            <tbody>
+            {% for c in customers %}
+                <tr>
+                    <td>#{{ c.customer_id }}</td>
+                    <td>{{ c.province.province_name }}</td>
+                    <td>{{ c.age }}</td>
+                    <td><span class="chip chip-{{ c.network_quality|lower }}">{{ c.network_quality }}</span></td>
+                    <td>{{ c.complaint_count }}</td>
+                    <td style="min-width:140px">
+                        <div class="hs-bar"><div class="hs-bar-fill hs-{{ c.health_status()|lower }}" style="width:{{ c.health_score() }}%"></div></div>
+                        <small>{{ c.health_score() }}/100</small>
+                    </td>
+                    <td><span class="health-badge health-{{ c.health_status()|lower }}">{{ c.health_status() }}</span></td>
+                    <td class="text-end"><a href="{{ url_for('customer.profile_full', customer_id=c.customer_id) }}" class="btn btn-icon" title="Profile"><i class="bi bi-person-vcard"></i></a></td>
+                </tr>
+            {% else %}
+                <tr><td colspan="8" class="text-center muted py-4">No customers found.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% if pagination.pages > 1 %}
+    <nav class="mt-3">
+        <ul class="pagination pagination-glass justify-content-center">
+            <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+                <a class="page-link" href="{{ url_for('customer.health_scores', page=pagination.prev_num) }}">&laquo;</a></li>
+            {% for p in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                {% if p %}<li class="page-item {% if p==pagination.page %}active{% endif %}">
+                    <a class="page-link" href="{{ url_for('customer.health_scores', page=p) }}">{{ p }}</a></li>
+                {% else %}<li class="page-item disabled"><span class="page-link">…</span></li>{% endif %}
+            {% endfor %}
+            <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+                <a class="page-link" href="{{ url_for('customer.health_scores', page=pagination.next_num) }}">&raquo;</a></li>
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+{% endblock %}

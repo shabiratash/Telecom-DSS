@@ -1,0 +1,155 @@
+{% extends "customer_portal/base.html" %}
+
+{% block title %}Risk Status{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2 class="mb-4"><i class="bi bi-shield-exclamation"></i> Risk Status & Health Score</h2>
+        
+        {% if customer %}
+        <div class="row g-4">
+            <!-- Health Score Card -->
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0">Health Score</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="text-center mb-3">
+                            <h1 class="display-3 {{ 'text-success' if customer.health_score() > 80 else 'text-warning' if customer.health_score() > 60 else 'text-danger' }}">
+                                {{ customer.health_score() }}
+                            </h1>
+                            <p class="text-muted">out of 100</p>
+                        </div>
+                        <div class="progress mb-3" style="height: 30px;">
+                            <div class="progress-bar bg-{{ 'success' if customer.health_score() > 80 else 'warning' if customer.health_score() > 60 else 'danger' }}" 
+                                 role="progressbar" 
+                                 style="width: {{ customer.health_score() }}%">
+                                {{ customer.health_score() }}%
+                            </div>
+                        </div>
+                        <div class="text-center">
+                            <span class="badge bg-{{ 'success' if customer.health_status() == 'Excellent' or customer.health_status() == 'Good' else 'warning' if customer.health_status() == 'Warning' else 'danger' }} fs-5">
+                                {{ customer.health_status() }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Risk Factors Card -->
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-header bg-warning text-dark">
+                        <h5 class="mb-0">Risk Factors</h5>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                Complaints
+                                <span class="badge bg-{{ 'danger' if customer.complaint_count > 3 else 'warning' if customer.complaint_count > 0 else 'success' }}">
+                                    {{ customer.complaint_count }}
+                                </span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                Inactive Days
+                                <span class="badge bg-{{ 'danger' if customer.inactive_days > 30 else 'warning' if customer.inactive_days > 7 else 'success' }}">
+                                    {{ customer.inactive_days }}
+                                </span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                Call Drop Rate
+                                <span class="badge bg-{{ 'danger' if customer.call_drop_rate > 5 else 'warning' if customer.call_drop_rate > 2 else 'success' }}">
+                                    {{ "%.1f"|format(customer.call_drop_rate) }}%
+                                </span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                Recharge Frequency
+                                <span class="badge bg-{{ 'success' if customer.recharge_frequency >= 5 else 'warning' if customer.recharge_frequency >= 3 else 'danger' }}">
+                                    {{ customer.recharge_frequency }}/mo
+                                </span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                Network Quality
+                                <span class="badge bg-{{ 'success' if customer.network_quality in ['Excellent', 'Good'] else 'warning' if customer.network_quality == 'Average' else 'danger' }}">
+                                    {{ customer.network_quality }}
+                                </span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Detailed Metrics -->
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header bg-secondary text-white">
+                        <h5 class="mb-0">Detailed Metrics</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <div class="card bg-light">
+                                    <div class="card-body text-center">
+                                        <h6 class="card-title">Tenure</h6>
+                                        <h4>{{ customer.tenure_months }} months</h4>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="card bg-light">
+                                    <div class="card-body text-center">
+                                        <h6 class="card-title">Avg Recharge</h6>
+                                        <h4>${{ "%.2f"|format(customer.recharge_amount) }}</h4>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="card bg-light">
+                                    <div class="card-body text-center">
+                                        <h6 class="card-title">Payment Method</h6>
+                                        <h4>{{ customer.payment_method }}</h4>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <div class="card bg-light">
+                                    <div class="card-body text-center">
+                                        <h6 class="card-title">Internet Type</h6>
+                                        <h4>{{ customer.internet_type }}</h4>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="card bg-light">
+                                    <div class="card-body text-center">
+                                        <h6 class="card-title">Tower Availability</h6>
+                                        <h4>{{ customer.tower_availability }}</h4>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="card bg-light">
+                                    <div class="card-body text-center">
+                                        <h6 class="card-title">Competitor Exposure</h6>
+                                        <h4>{{ customer.competitor_offer_exposure }}</h4>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle"></i>
+            No customer data available.
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
